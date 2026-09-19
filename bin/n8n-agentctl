@@ -266,7 +266,7 @@ mcp_start(){
 
 mcp_stop(){ jdc stop n8n-mcp; }
 mcp_status(){ jdc ps n8n-mcp; }
-mcp_logs(){ jdc logs "${@:-}" n8n-mcp; }
+mcp_logs(){ jdc logs "$@" n8n-mcp; }
 
 mcp_test(){
   load_secret
@@ -287,11 +287,13 @@ mcp_info(){
   port="$(awk -F= '$1=="JARVIS_MCP_PORT"{print $2}' "$ROOT/.env" 2>/dev/null | tail -1)"
   port="${port:-3001}"
   write_client_config
-  jq -n --arg endpoint "http://127.0.0.1:$port/mcp" --arg clientFile "$CLIENT_FILE" '{
+  local official="false"
+  [[ -n "${N8N_MCP_ACCESS_TOKEN:-}" ]] && official="true"
+  jq -n --arg endpoint "http://127.0.0.1:$port/mcp" --arg clientFile "$CLIENT_FILE" --argjson official "$official" '{
     endpoint: $endpoint,
     authentication: "Bearer token",
     clientConfigFile: $clientFile,
-    officialN8nMcpTokenConfigured: (env.N8N_MCP_ACCESS_TOKEN != null)
+    officialN8nMcpTokenConfigured: $official
   }'
 }
 
