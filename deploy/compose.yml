@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - ge360
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION}
+    restart: unless-stopped
+    ports:
+      - "${N8N_BIND_ADDRESS}:${N8N_PORT}:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: "5432"
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: "5678"
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+      TZ: ${TZ}
+
+      N8N_COMMUNITY_PACKAGES_ENABLED: ${N8N_COMMUNITY_PACKAGES_ENABLED}
+      N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: ${N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV}
+      N8N_UNVERIFIED_PACKAGES_ENABLED: ${N8N_UNVERIFIED_PACKAGES_ENABLED}
+      N8N_REINSTALL_MISSING_PACKAGES: ${N8N_REINSTALL_MISSING_PACKAGES}
+      N8N_COMMUNITY_PACKAGES: ${N8N_COMMUNITY_PACKAGES}
+
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "true"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "336"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../packs:/opt/ge360/packs:ro
+      - ../packs-extra:/opt/ge360/packs-extra:ro
+      - ../upstream/workflow-libraries:/opt/ge360/library:ro
+      - ../workflows:/opt/ge360/workflows:ro
+      - ../backups:/opt/ge360/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5678/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - ge360
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  ge360:
+    driver: bridge
