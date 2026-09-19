@@ -81,41 +81,63 @@ ge360ctl update
 
 ## Controllo da Jarvis Code
 
-n8n è predisposto per essere controllato da Jarvis Code tramite la Public REST API ufficiale,
-senza modificare direttamente PostgreSQL.
+Jarvis Code ha due canali:
+
+1. **n8n-mcp** — canale principale intelligente per ricerca nodi, validazione, patch parziali, autofix, test, versioni e rollback.
+2. **n8n-agentctl / REST** — fallback deterministico per recovery e automazioni semplici.
 
 Dopo aver creato una API key in **Settings → n8n API**:
 
 ```bash
 ge360ctl jarvis configure
-ge360ctl jarvis test
+ge360ctl jarvis mcp start
+ge360ctl jarvis mcp info
 ```
 
-Jarvis Code potrà poi usare:
+Il bridge MCP ascolta solo su:
+
+```text
+http://127.0.0.1:3001/mcp
+```
+
+La configurazione client pronta per Jarvis viene generata in:
+
+```text
+.secrets/jarvis-mcp-client.json
+```
+
+### Workflow Guard
 
 ```bash
-n8n-agentctl workflow list
-n8n-agentctl workflow get ID
-n8n-agentctl workflow create workflow.json
-n8n-agentctl workflow update ID workflow.json
-n8n-agentctl workflow activate ID
-n8n-agentctl workflow deactivate ID
-n8n-agentctl execution list
-n8n-agentctl execution get ID true
-n8n-agentctl execution retry ID
-n8n-agentctl audit
+ge360ctl jarvis guard managed-workflows/mio-workflow.json
 ```
 
-Per gli endpoint non ancora coperti dal wrapper:
+Il guard esegue:
+
+```text
+n8n-workflow-validator
+        ↓
+n8n-doctor
+        ↓
+controllo GE360
+        ↓
+PASS / STOP
+```
+
+Ogni create/update tramite fallback REST passa automaticamente da questo controllo.
+
+### Workflow-as-code
 
 ```bash
-n8n-agentctl request GET 'tags?limit=100'
+ge360ctl jarvis as-code skills search "suitecrm lead"
+ge360ctl jarvis as-code skills node-info httpRequest
 ```
 
-Prima di update/delete viene creato automaticamente uno snapshot in `backups/jarvis/`.
-La chiave API resta sotto `.secrets/` ed è esclusa da Git.
+I workflow gestiti da Jarvis possono essere conservati e versionati in `managed-workflows/`.
 
+Componenti selezionati: `docs/UPSTREAM-AGENT-INTEGRATIONS.md`  
 Contratto macchina: `jarvis/control-contract.json`  
+Policy agente: `jarvis/policy.json`  
 Documentazione: `docs/JARVIS-CODE-CONTROL.md`
 
 
@@ -145,6 +167,9 @@ Usare n8n come orchestratore fra:
 - `references/` — progetti mantenuti come riferimenti
 - `bin/ge360ctl` — controller del runtime
 - `bin/n8n-agentctl` — superficie di controllo n8n per Jarvis Code
+- `bin/workflow-guard` — validazione nativa + lint semantico prima del deploy
+- `managed-workflows/` — sorgente Git dei workflow gestiti da Jarvis
+- `deploy/compose.jarvis.yml` — runtime MCP/toolbox opzionale
 - `jarvis/control-contract.json` — contratto macchina per l'integrazione Jarvis
 - `scripts/` — sincronizzazione delle sorgenti
 - `docs/` — architettura e installazione
