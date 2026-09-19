@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "agent": "Jarvis Code",
+  "defaultMode": "guarded",
+  "rules": {
+    "directDatabaseWrites": false,
+    "validateBeforeCreate": true,
+    "validateBeforeUpdate": true,
+    "snapshotBeforeUpdate": true,
+    "snapshotBeforeDelete": true,
+    "preferPartialUpdates": true,
+    "testAfterDeploy": true,
+    "inspectFailedExecution": true,
+    "rollbackOnFailedRepair": true,
+    "keepMcpLocalOnly": true
+  },
+  "toolPriority": [
+    "n8n-mcp",
+    "workflow-guard",
+    "n8n-agentctl"
+  ]
+}
