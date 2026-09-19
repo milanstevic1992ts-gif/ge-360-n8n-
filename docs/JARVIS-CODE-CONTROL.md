@@ -1,147 +1,96 @@
 # Jarvis Code ↔ GE360 n8n
 
-GE360 n8n è predisposto per essere controllato da un agente esterno come Jarvis Code tramite la **Public REST API ufficiale di n8n**, senza accesso diretto al database PostgreSQL.
+GE360 espone due livelli di controllo per Jarvis Code.
 
-## Architettura
+## 1. Canale principale: MCP
 
 ```text
-Jarvis Code
-   |
-   |  n8n-agentctl / REST API
-   v
-http://127.0.0.1:5678/api/v1
-   |
-   v
-n8n
-   |
-   +--> PostgreSQL
-   +--> SuiteCRM
-   +--> Mautic
-   +--> WordPress
-   +--> Prospex
-   +--> Ollama / Jarvis
+http://127.0.0.1:3001/mcp
 ```
 
-## Cosa può controllare Jarvis Code
+È fornito da `n8n-mcp` e consente a Jarvis di avere:
+- conoscenza dei nodi n8n;
+- ricerca di template;
+- validazione di nodi e workflow;
+- creazione workflow;
+- aggiornamenti parziali/diff;
+- autofix;
+- test;
+- lettura delle esecuzioni;
+- versioni e rollback;
+- accesso alla Public API n8n.
 
-Con la chiave API corretta può:
-
-- elencare e leggere workflow;
-- creare workflow;
-- modificare workflow;
-- pubblicare/attivare e disattivare workflow;
-- eliminare workflow;
-- leggere esecuzioni e relativi errori/dati;
-- ritentare o fermare esecuzioni;
-- eseguire l'audit di sicurezza;
-- usare qualsiasi altro endpoint disponibile nella Public API tramite `request`.
-
-## Primo collegamento
-
-Dopo aver creato l'account owner n8n:
-
-1. Apri n8n.
-2. Vai in **Settings → n8n API**.
-3. Crea una API key con etichetta, per esempio `Jarvis Code`.
-4. Salvala sul Debian:
+Avvio:
 
 ```bash
 ge360ctl jarvis configure
+ge360ctl jarvis mcp start
+ge360ctl jarvis mcp info
 ```
 
-La chiave viene salvata in:
+Il file client pronto per Jarvis viene creato in:
 
 ```text
-.secrets/jarvis-n8n.env
+.secrets/jarvis-mcp-client.json
 ```
 
-con permessi locali e la cartella è esclusa da Git.
+## 2. Canale fallback: REST
 
-## Verifica
+`n8n-agentctl` resta disponibile per operazioni deterministiche e recovery:
 
 ```bash
-ge360ctl jarvis test
+ge360ctl jarvis workflow list
+ge360ctl jarvis workflow get ID
+ge360ctl jarvis execution list
+ge360ctl jarvis audit
 ```
 
-## Comandi principali per Jarvis Code
+## Workflow Guard
 
-```bash
-n8n-agentctl workflow list
-n8n-agentctl workflow get WORKFLOW_ID
-n8n-agentctl workflow create /percorso/workflow.json
-n8n-agentctl workflow update WORKFLOW_ID /percorso/workflow.json
-n8n-agentctl workflow activate WORKFLOW_ID
-n8n-agentctl workflow deactivate WORKFLOW_ID
-n8n-agentctl workflow delete WORKFLOW_ID
-```
+Ogni create/update via fallback REST viene validato prima del deploy.
 
-Esecuzioni:
-
-```bash
-n8n-agentctl execution list 'limit=50&status=error'
-n8n-agentctl execution get EXECUTION_ID true
-n8n-agentctl execution retry EXECUTION_ID
-n8n-agentctl execution stop EXECUTION_ID
-```
-
-Audit:
-
-```bash
-n8n-agentctl audit
-```
-
-Accesso completo alla Public API:
-
-```bash
-n8n-agentctl request GET 'tags?limit=100'
-n8n-agentctl request GET 'credentials'
-```
-
-Per richieste POST/PUT/PATCH con body:
-
-```bash
-n8n-agentctl request POST 'endpoint' body.json
-```
-
-## Snapshot automatici
-
-Prima di ogni modifica o eliminazione eseguita tramite il controller, il workflow corrente viene salvato sotto:
+Pipeline:
 
 ```text
-backups/jarvis/YYYYMMDD-HHMMSS/
+JSON
+  -> n8n-workflow-validator
+  -> n8n-doctor
+  -> controllo struttura GE360
+  -> deploy
 ```
 
-Questo permette a Jarvis Code di ripristinare rapidamente una versione precedente.
+Uso manuale:
 
-## API key e permessi
-
-Su n8n Enterprise la chiave può essere limitata con scope. Per il controllo workflow servono almeno:
-
-```text
-workflow:create
-workflow:read
-workflow:list
-workflow:update
-workflow:delete
-workflow:activate
-execution:read
-execution:list
-execution:retry
-execution:stop
-securityAudit:generate
+```bash
+ge360ctl jarvis guard managed-workflows/workflow.json
 ```
 
-Aggiungi altri scope solo quando servono, ad esempio community packages o credentials.
+## Workflow-as-code
 
-Sulle installazioni non-Enterprise le API key hanno i permessi dell'account che le ha create.
+Il toolbox contiene `n8nac`:
 
-## Regola GE360
+```bash
+ge360ctl jarvis as-code skills search "suitecrm lead"
+ge360ctl jarvis as-code skills node-info httpRequest
+```
 
-Jarvis Code deve controllare n8n tramite API/CLI, **non modificando direttamente PostgreSQL**.
+## MCP ufficiale di n8n
 
-Questo mantiene:
-- validazione n8n;
-- gestione versioni;
-- log delle esecuzioni;
-- possibilità di rollback;
-- compatibilità con futuri aggiornamenti.
+n8n recente espone anche il proprio Instance-level MCP.
+
+Dopo averlo abilitato nell'interfaccia n8n, puoi fornire il suo token al bridge:
+
+```bash
+ge360ctl jarvis mcp official-token
+```
+
+Questo abilita funzioni che la sola Public API non espone, incluse alcune operazioni di test e versioning native.
+
+## Sicurezza
+
+- MCP GE360 ascolta solo su `127.0.0.1`.
+- API key e token restano in `.secrets/`.
+- Jarvis non accede direttamente a PostgreSQL.
+- Prima di update/delete REST viene creato uno snapshot.
+- Le modifiche agentiche devono preferire patch parziali MCP.
+- I workflow versionabili vivono in `managed-workflows/`.
