@@ -8,9 +8,10 @@ FILE="${1:-}"
 [[ -n "$FILE" ]] || { echo "Uso: workflow-guard <workflow.json>" >&2; exit 2; }
 [[ -f "$FILE" ]] || { echo "File non trovato: $FILE" >&2; exit 2; }
 
+FILE="$(readlink -f "$FILE")"
 case "$FILE" in
   "$ROOT"/*) REL="${FILE#"$ROOT/"}" ;;
-  *) REL="$FILE" ;;
+  *) echo "Il workflow deve trovarsi dentro la repo GE360." >&2; exit 2 ;;
 esac
 
 docker_cmd(){
@@ -20,11 +21,13 @@ docker_cmd(){
 DC=(compose --env-file "$ROOT/.env" -f "$ROOT/deploy/compose.yml" -f "$ROOT/deploy/compose.jarvis.yml")
 
 echo "[1/3] JSON + validazione nativa n8n"
-docker_cmd "${DC[@]}" run --rm --no-deps jarvis-toolbox   "n8n-workflow-validator '/workspace/$REL' --json"
+docker_cmd "${DC[@]}" --profile tools run --rm --no-deps jarvis-toolbox \
+  "n8n-workflow-validator '/workspace/$REL' --json"
 
 echo
 echo "[2/3] Analisi semantica production-readiness"
-docker_cmd "${DC[@]}" run --rm --no-deps jarvis-toolbox   "n8n-doctor '/workspace/$REL' --severity error"
+docker_cmd "${DC[@]}" --profile tools run --rm --no-deps jarvis-toolbox \
+  "n8n-doctor '/workspace/$REL' --severity error"
 
 echo
 echo "[3/3] Struttura minima GE360"
