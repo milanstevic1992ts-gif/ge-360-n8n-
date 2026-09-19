@@ -1,0 +1,45 @@
+{
+  "name": "GE360 - Core Healthcheck",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ge360-manual-trigger",
+      "name": "Avvio manuale",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{status:'ok',system:'GE360 n8n Orchestrator',message:'Runtime pronto',timestamp:new Date().toISOString()}}];"
+      },
+      "id": "ge360-core-ready",
+      "name": "GE360 pronto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 0]
+    }
+  ],
+  "connections": {
+    "Avvio manuale": {
+      "main": [
+        [
+          {
+            "node": "GE360 pronto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Rome"
+  },
+  "meta": {
+    "ge360Pack": "core",
+    "ge360Version": "1.0.0"
+  },
+  "tags": []
+}
