@@ -1,0 +1,8 @@
+{
+  "id": "leadgen",
+  "name": "GE360 Lead Generation",
+  "version": "1.0.0",
+  "description": "Prospex, normalizzazione, deduplica e qualificazione lead.",
+  "community_packages": [],
+  "requires": ["GE360 Prospex o altra sorgente lead"]
+}
