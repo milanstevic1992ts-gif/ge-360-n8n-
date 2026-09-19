@@ -11,12 +11,12 @@ GE360 usa alcuni componenti open source selezionati invece di reinventare funzio
 
 Viene eseguito come container opzionale e ascolta solo su `127.0.0.1`.
 
-## n8n-workflow-validator
+## n8n-workflow-validator — studiato, non usato nel runtime
 
 - Upstream: `yigitkonur/n8n-workflow-validator`
 - Licenza: MIT
-- Versione GE360: `1.4.2`
-- Uso: validazione dei workflow usando il motore nativo n8n.
+- Motivo: ottima idea, ma la release esaminata dipende da `n8n-nodes-base 1.x`.
+- Decisione GE360: non usarlo nel runtime n8n 2.39.x per evitare mismatch di schema. La validazione viene affidata a `n8nac` + `n8n-mcp`.
 
 ## n8n-doctor
 
