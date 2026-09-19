@@ -1,0 +1,8 @@
+{
+  "id": "ai",
+  "name": "GE360 AI",
+  "version": "1.0.0",
+  "description": "Jarvis/Ollama e flussi AI locali. Ollama sul Debian è raggiungibile da n8n tramite host.docker.internal:11434.",
+  "community_packages": [],
+  "requires": ["Ollama opzionale sul sistema host"]
+}
