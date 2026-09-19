@@ -79,6 +79,46 @@ ge360ctl backup
 ge360ctl update
 ```
 
+## Controllo da Jarvis Code
+
+n8n è predisposto per essere controllato da Jarvis Code tramite la Public REST API ufficiale,
+senza modificare direttamente PostgreSQL.
+
+Dopo aver creato una API key in **Settings → n8n API**:
+
+```bash
+ge360ctl jarvis configure
+ge360ctl jarvis test
+```
+
+Jarvis Code potrà poi usare:
+
+```bash
+n8n-agentctl workflow list
+n8n-agentctl workflow get ID
+n8n-agentctl workflow create workflow.json
+n8n-agentctl workflow update ID workflow.json
+n8n-agentctl workflow activate ID
+n8n-agentctl workflow deactivate ID
+n8n-agentctl execution list
+n8n-agentctl execution get ID true
+n8n-agentctl execution retry ID
+n8n-agentctl audit
+```
+
+Per gli endpoint non ancora coperti dal wrapper:
+
+```bash
+n8n-agentctl request GET 'tags?limit=100'
+```
+
+Prima di update/delete viene creato automaticamente uno snapshot in `backups/jarvis/`.
+La chiave API resta sotto `.secrets/` ed è esclusa da Git.
+
+Contratto macchina: `jarvis/control-contract.json`  
+Documentazione: `docs/JARVIS-CODE-CONTROL.md`
+
+
 ## Obiettivo
 
 Usare n8n come orchestratore fra:
@@ -104,6 +144,8 @@ Usare n8n come orchestratore fra:
 - `integrations/` — nodi n8n e connettori utili a GE360
 - `references/` — progetti mantenuti come riferimenti
 - `bin/ge360ctl` — controller del runtime
+- `bin/n8n-agentctl` — superficie di controllo n8n per Jarvis Code
+- `jarvis/control-contract.json` — contratto macchina per l'integrazione Jarvis
 - `scripts/` — sincronizzazione delle sorgenti
 - `docs/` — architettura e installazione
 - `.github/workflows/` — validazione e aggiornamenti automatici
