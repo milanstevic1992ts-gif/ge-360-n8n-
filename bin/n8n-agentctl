@@ -5,12 +5,30 @@ SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
 SECRET_DIR="$ROOT/.secrets"
 SECRET_FILE="$SECRET_DIR/jarvis-n8n.env"
+CLIENT_FILE="$SECRET_DIR/jarvis-mcp-client.json"
 BACKUP_DIR="$ROOT/backups/jarvis"
+COMPOSE_FILE="$ROOT/deploy/compose.yml"
+JARVIS_COMPOSE_FILE="$ROOT/deploy/compose.jarvis.yml"
 
 mkdir -p "$SECRET_DIR" "$BACKUP_DIR"
 
 say(){ printf '\033[1;36m[JARVIS↔n8n]\033[0m %s\n' "$*"; }
 die(){ printf '\033[1;31m[JARVIS↔n8n ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
+
+docker_cmd(){
+  if docker info >/dev/null 2>&1; then
+    docker "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo docker "$@"
+  else
+    die "Docker non accessibile."
+  fi
+}
+
+jdc(){
+  [[ -f "$ROOT/.env" ]] || die "Manca .env. Esegui prima: sudo bash ./install.sh"
+  docker_cmd compose --env-file "$ROOT/.env" -f "$COMPOSE_FILE" -f "$JARVIS_COMPOSE_FILE" "$@"
+}
 
 load_secret(){
   [[ -f "$SECRET_FILE" ]] || die "Connessione Jarvis non configurata. Usa: ge360ctl jarvis configure"
@@ -18,6 +36,29 @@ load_secret(){
   source "$SECRET_FILE"
   : "${N8N_AGENT_URL:?N8N_AGENT_URL mancante}"
   : "${N8N_AGENT_API_KEY:?N8N_AGENT_API_KEY mancante}"
+}
+
+write_client_config(){
+  load_secret
+  local port token
+  port="$(awk -F= '$1=="JARVIS_MCP_PORT"{print $2}' "$ROOT/.env" 2>/dev/null | tail -1)"
+  port="${port:-3001}"
+  token="${AUTH_TOKEN:-${MCP_AUTH_TOKEN:-}}"
+  [[ -n "$token" ]] || return 0
+
+  umask 077
+  jq -n --arg url "http://127.0.0.1:$port/mcp" --arg token "$token" '{
+    mcpServers: {
+      "ge360-n8n": {
+        type: "http",
+        url: $url,
+        headers: {
+          Authorization: ("Bearer " + $token)
+        }
+      }
+    }
+  }' > "$CLIENT_FILE"
+  chmod 600 "$CLIENT_FILE"
 }
 
 api(){
@@ -28,16 +69,29 @@ api(){
 
   if [[ -n "$body_file" ]]; then
     [[ -f "$body_file" ]] || die "File body non trovato: $body_file"
-    curl -fsS -X "$method" "$url"       -H "accept: application/json"       -H "content-type: application/json"       -H "X-N8N-API-KEY: $N8N_AGENT_API_KEY"       --data-binary "@$body_file"
+    curl -fsS -X "$method" "$url" \
+      -H "accept: application/json" \
+      -H "content-type: application/json" \
+      -H "X-N8N-API-KEY: $N8N_AGENT_API_KEY" \
+      --data-binary "@$body_file"
   else
-    curl -fsS -X "$method" "$url"       -H "accept: application/json"       -H "X-N8N-API-KEY: $N8N_AGENT_API_KEY"
+    curl -fsS -X "$method" "$url" \
+      -H "accept: application/json" \
+      -H "X-N8N-API-KEY: $N8N_AGENT_API_KEY"
   fi
 }
 
 configure(){
   local default_url="http://127.0.0.1:5678/api/v1"
-  local url="${N8N_AGENT_URL:-}"
-  local key="${N8N_AGENT_API_KEY:-}"
+  local url="" key="" mcp_token=""
+
+  if [[ -f "$SECRET_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$SECRET_FILE"
+    url="${N8N_AGENT_URL:-}"
+    key="${N8N_AGENT_API_KEY:-}"
+    mcp_token="${AUTH_TOKEN:-${MCP_AUTH_TOKEN:-}}"
+  fi
 
   if [[ -z "$url" ]]; then
     read -r -p "URL API n8n [$default_url]: " url
@@ -47,23 +101,69 @@ configure(){
   if [[ -z "$key" ]]; then
     read -r -s -p "API key n8n dedicata a Jarvis Code: " key
     echo
+  else
+    read -r -p "Riutilizzo la API key Jarvis già salvata? [S/n]: " keep
+    if [[ "${keep:-S}" =~ ^[Nn]$ ]]; then
+      read -r -s -p "Nuova API key n8n dedicata a Jarvis Code: " key
+      echo
+    fi
   fi
 
   [[ -n "$key" ]] || die "API key vuota."
+  [[ -n "$mcp_token" ]] || mcp_token="$(openssl rand -hex 32)"
+
   mkdir -p "$SECRET_DIR"
   umask 077
   {
     printf 'N8N_AGENT_URL=%q\n' "$url"
     printf 'N8N_AGENT_API_KEY=%q\n' "$key"
+    printf 'N8N_API_KEY=%q\n' "$key"
+    printf 'AUTH_TOKEN=%q\n' "$mcp_token"
+    printf 'MCP_AUTH_TOKEN=%q\n' "$mcp_token"
+    if [[ -n "${N8N_MCP_ACCESS_TOKEN:-}" ]]; then
+      printf 'N8N_MCP_ACCESS_TOKEN=%q\n' "$N8N_MCP_ACCESS_TOKEN"
+    fi
   } > "$SECRET_FILE"
   chmod 600 "$SECRET_FILE"
 
-  say "Credenziale salvata localmente in .secrets/ (mai versionata)."
+  write_client_config
+  say "Credenziali salvate localmente in .secrets/ (mai versionate)."
   if api GET "workflows?limit=1" >/dev/null; then
-    say "Connessione riuscita."
+    say "Public API n8n: OK"
   else
     die "Credenziale salvata, ma il test API non è riuscito."
   fi
+  say "Configurazione client MCP: $CLIENT_FILE"
+}
+
+official_mcp_token(){
+  load_secret
+  local token=""
+  read -r -s -p "Access token da n8n → Settings → Instance-level MCP: " token
+  echo
+  [[ -n "$token" ]] || die "Token vuoto."
+
+  python3 - "$SECRET_FILE" "$token" <<'PY'
+from pathlib import Path
+import sys, shlex
+p=Path(sys.argv[1])
+token=sys.argv[2]
+lines=p.read_text().splitlines()
+out=[]
+done=False
+for line in lines:
+    if line.startswith("N8N_MCP_ACCESS_TOKEN="):
+        out.append("N8N_MCP_ACCESS_TOKEN="+shlex.quote(token))
+        done=True
+    else:
+        out.append(line)
+if not done:
+    out.append("N8N_MCP_ACCESS_TOKEN="+shlex.quote(token))
+p.write_text("\n".join(out)+"\n")
+PY
+  chmod 600 "$SECRET_FILE"
+  say "Token MCP ufficiale n8n salvato. Riavvio bridge MCP..."
+  mcp_start
 }
 
 test_api(){
@@ -95,6 +195,7 @@ normalize_workflow(){
 
 workflow_create(){
   local file="$1" tmp
+  "$ROOT/bin/workflow-guard" "$file"
   tmp="$(mktemp)"
   trap 'rm -f "$tmp"' RETURN
   normalize_workflow "$file" "$tmp"
@@ -103,6 +204,7 @@ workflow_create(){
 
 workflow_update(){
   local id="$1" file="$2" tmp
+  "$ROOT/bin/workflow-guard" "$file"
   backup_workflow "$id"
   tmp="$(mktemp)"
   trap 'rm -f "$tmp"' RETURN
@@ -152,15 +254,103 @@ raw_request(){
   fi
 }
 
+mcp_start(){
+  load_secret
+  say "Avvio n8n-mcp..."
+  jdc pull n8n-mcp
+  jdc up -d n8n-mcp
+  write_client_config
+  mcp_test >/dev/null
+  say "n8n-mcp: OK"
+}
+
+mcp_stop(){ jdc stop n8n-mcp; }
+mcp_status(){ jdc ps n8n-mcp; }
+mcp_logs(){ jdc logs "${@:-}" n8n-mcp; }
+
+mcp_test(){
+  load_secret
+  local port token
+  port="$(awk -F= '$1=="JARVIS_MCP_PORT"{print $2}' "$ROOT/.env" 2>/dev/null | tail -1)"
+  port="${port:-3001}"
+  token="${AUTH_TOKEN:-${MCP_AUTH_TOKEN:-}}"
+  curl -fsS -X POST "http://127.0.0.1:$port/mcp" \
+    -H "Authorization: Bearer $token" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"GE360-Jarvis","version":"1.0"}},"id":1}'
+}
+
+mcp_info(){
+  load_secret
+  local port
+  port="$(awk -F= '$1=="JARVIS_MCP_PORT"{print $2}' "$ROOT/.env" 2>/dev/null | tail -1)"
+  port="${port:-3001}"
+  write_client_config
+  jq -n --arg endpoint "http://127.0.0.1:$port/mcp" --arg clientFile "$CLIENT_FILE" '{
+    endpoint: $endpoint,
+    authentication: "Bearer token",
+    clientConfigFile: $clientFile,
+    officialN8nMcpTokenConfigured: (env.N8N_MCP_ACCESS_TOKEN != null)
+  }'
+}
+
+toolbox(){
+  jdc --profile tools run --rm --no-deps jarvis-toolbox "$*"
+}
+
+validate_file(){
+  [[ $# -eq 1 ]] || die "Uso: validate <workflow.json>"
+  local abs rel
+  abs="$(readlink -f "$1")"
+  case "$abs" in "$ROOT"/*) ;; *) die "Il workflow deve trovarsi dentro la repo GE360."; esac
+  rel="${abs#"$ROOT/"}"
+  toolbox "n8n-workflow-validator '/workspace/$rel' --json"
+}
+
+doctor_file(){
+  [[ $# -eq 1 ]] || die "Uso: doctor <workflow.json>"
+  local abs rel
+  abs="$(readlink -f "$1")"
+  case "$abs" in "$ROOT"/*) ;; *) die "Il workflow deve trovarsi dentro la repo GE360."; esac
+  rel="${abs#"$ROOT/"}"
+  toolbox "n8n-doctor '/workspace/$rel'"
+}
+
+guard_file(){
+  [[ $# -eq 1 ]] || die "Uso: guard <workflow.json>"
+  "$ROOT/bin/workflow-guard" "$1"
+}
+
+as_code(){
+  [[ $# -ge 1 ]] || die "Uso: as-code <argomenti n8nac>"
+  toolbox "n8nac $*"
+}
+
 usage(){
 cat <<'EOF'
-n8n-agentctl — interfaccia locale per Jarvis Code
+n8n-agentctl — superficie di controllo GE360 per Jarvis Code
 
 Configurazione:
   n8n-agentctl configure
   n8n-agentctl test
 
-Workflow:
+MCP intelligente:
+  n8n-agentctl mcp start
+  n8n-agentctl mcp stop
+  n8n-agentctl mcp status
+  n8n-agentctl mcp logs [-f]
+  n8n-agentctl mcp test
+  n8n-agentctl mcp info
+  n8n-agentctl mcp official-token
+
+Validazione / workflow-as-code:
+  n8n-agentctl guard <workflow.json>
+  n8n-agentctl validate <workflow.json>
+  n8n-agentctl doctor <workflow.json>
+  n8n-agentctl as-code <argomenti n8nac>
+
+Workflow REST fallback:
   n8n-agentctl workflow list [query]
   n8n-agentctl workflow get <id>
   n8n-agentctl workflow create <workflow.json>
@@ -180,9 +370,11 @@ Sicurezza / API completa:
   n8n-agentctl audit
   n8n-agentctl request <METHOD> <PATH> [body.json]
 
-Note:
-- Prima di update/delete viene creato automaticamente uno snapshot in backups/jarvis/.
-- request permette a Jarvis Code di usare qualsiasi endpoint disponibile nella Public API n8n.
+Regole:
+- n8n-mcp è il canale principale per patch parziali, autofix, test e versioni.
+- workflow create/update via REST passa automaticamente dal workflow-guard.
+- prima di update/delete viene creato uno snapshot in backups/jarvis/.
+- PostgreSQL non viene modificato direttamente da Jarvis.
 EOF
 }
 
@@ -190,6 +382,23 @@ cmd="${1:-help}"; shift || true
 case "$cmd" in
   configure) configure ;;
   test) test_api ;;
+  mcp)
+    sub="${1:-status}"; shift || true
+    case "$sub" in
+      start) mcp_start ;;
+      stop) mcp_stop ;;
+      status) mcp_status ;;
+      logs) mcp_logs "$@" ;;
+      test) mcp_test ;;
+      info) mcp_info ;;
+      official-token) official_mcp_token ;;
+      *) usage; exit 1 ;;
+    esac
+    ;;
+  guard) guard_file "$@" ;;
+  validate) validate_file "$@" ;;
+  doctor) doctor_file "$@" ;;
+  as-code) as_code "$@" ;;
   workflow)
     sub="${1:-}"; shift || true
     case "$sub" in
