@@ -44,16 +44,7 @@ sync_workflows() {
 
   (
     cd "$src"
-    find . -type f \(
-      -iname '*.json' -o
-      -iname '*.md' -o
-      -iname '*.yml' -o
-      -iname '*.yaml' -o
-      -iname 'LICENSE' -o
-      -iname 'LICENSE.*' -o
-      -iname 'COPYING' -o
-      -iname 'NOTICE'
-    \) -print0 | rsync -a --from0 --files-from=- ./ "$ROOT/$dest/"
+    find . -type f \( -iname '*.json' -o -iname '*.md' -o -iname '*.yml' -o -iname '*.yaml' -o -iname 'LICENSE' -o -iname 'LICENSE.*' -o -iname 'COPYING' -o -iname 'NOTICE' \) -print0 | rsync -a --from0 --files-from=- ./ "$ROOT/$dest/"
   )
 
   cat > "$ROOT/$dest/GE360-UPSTREAM.md" <<EOF
@@ -89,5 +80,3 @@ tail -n +2 "$MANIFEST" | while IFS=$'\t' read -r mode upstream_repo destination 
 done
 
 echo "Sincronizzazione completata."
-
-# GE360 initial sync trigger
