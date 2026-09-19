@@ -2,6 +2,83 @@
 
 Repository centrale per l'automazione GE360 con n8n.
 
+## Installazione rapida su Debian 13
+
+```bash
+cd ~
+git clone https://github.com/milanstevic1992ts-gif/ge-360-n8n-.git
+cd ge-360-n8n-
+sudo bash install.sh
+```
+
+Al termine n8n è disponibile localmente su:
+
+```text
+http://127.0.0.1:5678
+```
+
+Il runtime usa **n8n + PostgreSQL**. Ollama non viene duplicato: se è già installato sul Debian,
+n8n può raggiungerlo tramite `http://host.docker.internal:11434`.
+
+Guida completa: [docs/INSTALL-DEBIAN.md](docs/INSTALL-DEBIAN.md)
+
+## Plug-and-play: GE360 Packs
+
+```bash
+ge360ctl pack list
+ge360ctl pack enable crm
+ge360ctl pack enable marketing
+ge360ctl pack enable ai
+ge360ctl pack enable wordpress
+ge360ctl pack enable leadgen
+ge360ctl pack enable analytics
+ge360ctl pack enable social
+```
+
+Un pack può contenere:
+
+- community nodes n8n;
+- workflow JSON;
+- requisiti e documentazione;
+- integrazioni specifiche GE360.
+
+Per aggiungere un modulo esterno:
+
+```bash
+ge360ctl pack add https://github.com/OWNER/REPO.git
+ge360ctl pack enable ID_DEL_PACK
+```
+
+Il template per crearne di nuovi è in `pack-template/`.
+
+## Libreria workflow
+
+Non carichiamo migliaia di workflow dentro l'interfaccia di n8n. Restano disponibili come
+libreria ricercabile:
+
+```bash
+ge360ctl flow search suitecrm
+ge360ctl flow search mautic
+ge360ctl flow search wordpress
+ge360ctl flow search ollama
+```
+
+Poi importi solo quello che serve:
+
+```bash
+ge360ctl flow import 'PERCORSO/DEL/WORKFLOW.json'
+```
+
+## Gestione
+
+```bash
+ge360ctl status
+ge360ctl logs -f
+ge360ctl restart
+ge360ctl backup
+ge360ctl update
+```
+
 ## Obiettivo
 
 Usare n8n come orchestratore fra:
@@ -19,22 +96,24 @@ Usare n8n come orchestratore fra:
 
 ## Struttura
 
+- `deploy/` — runtime Docker Compose
+- `packs/` — moduli GE360 plug-and-play
+- `packs-extra/` — pack esterni installati localmente
+- `pack-template/` — modello per nuovi moduli
 - `upstream/` — sorgenti open-source e raccolte workflow selezionate
 - `integrations/` — nodi n8n e connettori utili a GE360
-- `references/` — progetti utili non copiati per licenza, dimensione o perché mantenuti separatamente
-- `scripts/` — sincronizzazione automatica delle sorgenti
-- `docs/` — architettura e decisioni
-- `.github/workflows/` — aggiornamento automatico delle sorgenti
+- `references/` — progetti mantenuti come riferimenti
+- `bin/ge360ctl` — controller del runtime
+- `scripts/` — sincronizzazione delle sorgenti
+- `docs/` — architettura e installazione
+- `.github/workflows/` — validazione e aggiornamenti automatici
 
-## Regola di importazione
+## Sicurezza
 
-Le repository con licenza compatibile vengono sincronizzate nella repo.
-Le raccolte molto grandi vengono filtrate conservando soprattutto workflow JSON, documentazione e licenze.
-Le repository senza licenza esplicita o troppo grandi vengono mantenute come riferimenti esterni.
+`.env`, backup, stato locale e pack aggiunti localmente sono esclusi da Git.
+Non inserire credenziali, password, token o API key nei workflow versionati.
 
-Non inserire credenziali, token, password o API key nei workflow versionati.
-
-## Primo flusso GE360 previsto
+## Pipeline GE360
 
 ```text
 Prospex
@@ -48,4 +127,4 @@ Prospex
   -> GE360 Analitica
 ```
 
-La lista completa delle sorgenti è in `upstream/sources.tsv`.
+La lista completa delle sorgenti upstream è in `upstream/sources.tsv`.
