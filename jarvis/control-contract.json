@@ -1,16 +1,33 @@
 {
   "name": "GE360 n8n Control Surface for Jarvis Code",
-  "version": "1.0.0",
-  "transport": "local-http",
-  "defaultBaseUrl": "http://127.0.0.1:5678/api/v1",
-  "authentication": {
-    "type": "header",
-    "header": "X-N8N-API-KEY",
-    "storage": ".secrets/jarvis-n8n.env"
+  "version": "2.0.0",
+  "primaryTransport": {
+    "type": "mcp-http",
+    "endpoint": "http://127.0.0.1:3001/mcp",
+    "authentication": "Bearer",
+    "clientConfig": ".secrets/jarvis-mcp-client.json",
+    "implementation": "czlonkowski/n8n-mcp@2.87.0"
+  },
+  "fallbackTransport": {
+    "type": "rest",
+    "defaultBaseUrl": "http://127.0.0.1:5678/api/v1",
+    "authentication": {
+      "type": "header",
+      "header": "X-N8N-API-KEY",
+      "storage": ".secrets/jarvis-n8n.env"
+    }
   },
   "cli": {
     "command": "n8n-agentctl",
     "capabilities": [
+      "mcp.start",
+      "mcp.stop",
+      "mcp.status",
+      "mcp.test",
+      "workflow.validateNative",
+      "workflow.doctor",
+      "workflow.guard",
+      "workflow.asCode",
       "workflow.list",
       "workflow.get",
       "workflow.create",
@@ -27,10 +44,26 @@
       "api.rawRequest"
     ]
   },
+  "preferredAgentOperations": [
+    "partial workflow updates through n8n-mcp",
+    "validate before writes",
+    "test after deploy",
+    "inspect failed executions",
+    "use workflow versions and rollback",
+    "commit tested workflow source to Git"
+  ],
+  "validators": [
+    "n8n-workflow-validator@1.4.2",
+    "n8n-doctor@0.1.0"
+  ],
+  "workflowAsCode": "n8nac@2.7.0",
   "safety": {
     "directDatabaseAccess": false,
+    "automaticGuardBeforeRestCreate": true,
+    "automaticGuardBeforeRestUpdate": true,
     "automaticSnapshotBeforeWorkflowUpdate": true,
     "automaticSnapshotBeforeWorkflowDelete": true,
+    "preferPartialUpdates": true,
     "bindAddress": "127.0.0.1"
   }
 }
