@@ -1,0 +1,8 @@
+{
+  "id": "marketing",
+  "name": "GE360 Marketing",
+  "version": "1.0.0",
+  "description": "Mautic, email marketing, segmentazione e follow-up.",
+  "community_packages": [],
+  "requires": ["Mautic raggiungibile dal server n8n"]
+}
