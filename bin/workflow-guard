@@ -20,9 +20,9 @@ docker_cmd(){
 
 DC=(compose --env-file "$ROOT/.env" -f "$ROOT/deploy/compose.yml" -f "$ROOT/deploy/compose.jarvis.yml")
 
-echo "[1/3] JSON + validazione nativa n8n"
+echo "[1/3] Validazione schema/nodi n8n 2.x con n8nac"
 docker_cmd "${DC[@]}" --profile tools run --rm --no-deps jarvis-toolbox \
-  "n8n-workflow-validator '/workspace/$REL' --json"
+  "n8nac skills validate '/workspace/$REL' --strict"
 
 echo
 echo "[2/3] Analisi semantica production-readiness"
