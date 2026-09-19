@@ -1,0 +1,8 @@
+{
+  "id": "core",
+  "name": "GE360 Core",
+  "version": "1.0.0",
+  "description": "Workflow base, healthcheck e fondamenta GE360.",
+  "community_packages": [],
+  "requires": []
+}
