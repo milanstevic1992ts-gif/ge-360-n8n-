@@ -53,7 +53,7 @@ Pipeline:
 
 ```text
 JSON
-  -> n8n-workflow-validator
+  -> n8nac skills validate --strict
   -> n8n-doctor
   -> controllo struttura GE360
   -> deploy
