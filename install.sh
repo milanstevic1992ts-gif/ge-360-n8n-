@@ -66,7 +66,7 @@ fi
 
 $SUDO ln -sf "$ROOT/bin/ge360ctl" /usr/local/bin/ge360ctl
 $SUDO ln -sf "$ROOT/bin/n8n-agentctl" /usr/local/bin/n8n-agentctl
-chmod +x "$ROOT/bin/ge360ctl" "$ROOT/bin/n8n-agentctl" "$ROOT/install.sh"
+chmod +x "$ROOT/bin/ge360ctl" "$ROOT/bin/n8n-agentctl" "$ROOT/bin/workflow-guard" "$ROOT/install.sh"
 
 log "Avvio PostgreSQL + n8n..."
 "$ROOT/bin/ge360ctl" start
