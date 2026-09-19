@@ -89,3 +89,5 @@ tail -n +2 "$MANIFEST" | while IFS=$'\t' read -r mode upstream_repo destination 
 done
 
 echo "Sincronizzazione completata."
+
+# GE360 initial sync trigger
