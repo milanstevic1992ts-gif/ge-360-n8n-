@@ -1,0 +1,8 @@
+{
+  "id": "analytics",
+  "name": "GE360 Analytics",
+  "version": "1.0.0",
+  "description": "Raccolta KPI e collegamento con GE360 Analitica.",
+  "community_packages": [],
+  "requires": []
+}
