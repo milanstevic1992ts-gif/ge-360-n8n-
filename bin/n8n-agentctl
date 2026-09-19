@@ -307,7 +307,7 @@ validate_file(){
   abs="$(readlink -f "$1")"
   case "$abs" in "$ROOT"/*) ;; *) die "Il workflow deve trovarsi dentro la repo GE360."; esac
   rel="${abs#"$ROOT/"}"
-  toolbox "n8n-workflow-validator '/workspace/$rel' --json"
+  toolbox "n8nac skills validate '/workspace/$rel' --strict"
 }
 
 doctor_file(){
