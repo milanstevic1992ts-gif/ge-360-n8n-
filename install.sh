@@ -87,6 +87,12 @@ done
 "$ROOT/bin/ge360ctl" pack import core || true
 "$ROOT/bin/ge360ctl" flow index || true
 
+if [[ "$TARGET_USER" != "root" ]]; then
+  TARGET_GROUP="$(id -gn "$TARGET_USER")"
+  chown "$TARGET_USER:$TARGET_GROUP" "$ENV_FILE" || true
+  chown -R "$TARGET_USER:$TARGET_GROUP" "$ROOT/.state" "$ROOT/backups" "$ROOT/packs-extra" || true
+fi
+
 PORT="$(awk -F= '$1=="N8N_PORT"{print $2}' "$ENV_FILE" | tail -1)"
 BIND="$(awk -F= '$1=="N8N_BIND_ADDRESS"{print $2}' "$ENV_FILE" | tail -1)"
 
