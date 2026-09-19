@@ -1,0 +1,8 @@
+{
+  "id": "wordpress",
+  "name": "GE360 WordPress",
+  "version": "1.0.0",
+  "description": "Automazioni WordPress, moduli sito, quiz e SEO.",
+  "community_packages": [],
+  "requires": ["Credenziali WordPress REST API"]
+}
