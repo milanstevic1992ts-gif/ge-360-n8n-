@@ -1,0 +1,170 @@
+# n8n-nodes-suitecrm-community
+
+A generic n8n node to operate with any SuiteCRM (7.x+) module via the official JSON API.
+
+Supports CRUD operations, dynamic module and field discovery (including custom fields), advanced filtering, pagination, and relationship retrieval.
+
+---
+
+## Features
+
+- **Full CRUD** – Create, read, update, and delete any SuiteCRM module
+- **Dynamic discovery** – Auto-lists modules and fields, including custom fields
+- **Advanced filtering** – Filter records using operators, custom fields, pagination
+- **Relationship handling** – Retrieve, link, and unlink related records from any entity
+- **Polling trigger** – React to new or updated records without touching the CRM instance
+- **AI agent tool** – Use the main node as a tool from an n8n AI Agent
+- **OAuth2 authentication** – Native SuiteCRM client credentials flow
+- **Robust error handling** – Clear errors and maintainable structure
+
+---
+
+## Installation
+
+**Recommended:** install from the n8n UI under **Settings → Community Nodes**, entering the package name `n8n-nodes-suitecrm-community`.
+
+**Self-hosted via CLI:** install it into your n8n instance:
+
+```bash
+npm install n8n-nodes-suitecrm-community
+```
+
+Then restart n8n. See the [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/installation/) for details.
+
+---
+
+## Usage
+
+### 1. Credentials
+
+- Create credentials in n8n of type **SuiteCRM API**
+- Fill in your SuiteCRM domain, Client ID, and Client Secret  
+  *(see SuiteCRM → Admin → OAuth2 Clients)*
+
+### 2. Node Configuration
+
+- **Module:** Auto-discovered list from your API
+- **Operation:** Choose from Get All, Get One, Create, Update, Delete, Get Relationships, Link Record, Unlink Record
+- **Data mode:** Define Create/Update payloads field by field, or with raw JSON
+- **Parameters:** Filters, IDs, pagination, or JSON payloads depending on operation
+
+### 3. Example – Create a Contact
+
+Input data:
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "email1": "john.doe@example.com"
+}
+```
+
+### 4. Polling Trigger
+
+The **SuiteCRM Trigger** node polls the selected modules and emits one item per new or updated record. Events are limited to `created` and `updated` (deletion detection is not supported). Cadence is configurable: every poll, every N hours/days, or a 5-field cron expression.
+
+### 5. AI Agent Tool
+
+The main SuiteCRM node can be used as a tool by n8n's **AI Agent**. Community packages are only exposed as tools when the instance is started with:
+
+```bash
+N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+```
+
+Without that environment variable the node does not appear as a tool (the trigger node is never usable as a tool).
+
+#### Letting the model fill in the data
+
+The node ships with `$fromAI()` defaults for its dynamic parameters, so the model controls them out of the box:
+
+- **`data`** – the record payload (Create / Update, Raw JSON mode)
+- **`id`** – the record ID (Get One, Update, Delete, Get Relationships)
+- **`limit`** – the page size (Get All with Return All disabled)
+
+`Module` and `Operation` stay fixed on the node: pin one module/operation per workflow (e.g. `Contacts` + `Create`), and the agent supplies `data` on each call. You can also enable/disable `$fromAI()` per field with the **"Defined automatically by the model"** button in the node editor.
+
+#### Using it through an MCP server
+
+Because the node is `usableAsTool`, n8n's **MCP Server** trigger exposes it automatically to any MCP client. Connect the node as a tool in an MCP Server workflow, point your client at the server's URL, and the model can call the same operations directly (e.g. `Get All` exposes a `limit` parameter, `Create` exposes a required `data` payload).
+
+---
+
+## Supported Operations
+
+| Operation         | Description                                   |
+|------------------|-----------------------------------------------|
+| Get All          | Fetch records with optional filters & paging  |
+| Get One          | Retrieve a single record by ID                |
+| Create           | Add a new record (field mode or JSON payload) |
+| Update           | Modify a record (field mode or JSON payload)  |
+| Delete           | Remove a record by ID                         |
+| Get Relationships| Fetch related records of a module by ID       |
+| Link Record      | Link an existing record to another            |
+| Unlink Record    | Break a link without deleting either record   |
+
+---
+
+## Requirements
+
+- n8n 1.x or newer
+- SuiteCRM 7.x+ with API and OAuth2 enabled
+- SuiteCRM **≥ 7.11.4** is required for the **Unlink Record** operation (DELETE relationship endpoint)
+- All modules and fields are fetched dynamically
+- For 1:N relations, set the "parent" ID on the child (SuiteCRM logic)
+- Tested against SuiteCRM v7+ JSON API
+
+---
+
+## Troubleshooting
+
+### "The specified package could not be loaded" after upgrading
+
+n8n caches loaded node classes. When upgrading from v2.2.7 or earlier, clear the cache and reinstall:
+
+**Docker:**
+```bash
+docker exec -it <container> sh -c "rm -rf /home/node/.n8n/nodes/node_modules/* /home/node/.n8n/nodes/package.json"
+docker restart <container>
+```
+
+**npm / local:**
+```bash
+rm -rf ~/.n8n/nodes/node_modules/*
+rm -f ~/.n8n/nodes/package.json
+```
+
+Then reinstall from **Settings → Community Nodes**.
+
+### Node does not appear as an AI Agent tool
+
+Add this environment variable to your n8n instance:
+```bash
+N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+```
+
+### Other issues
+
+- `access_token` missing → Check credentials or OAuth2 setup
+- `405 Method Not Allowed` → PATCH may not be enabled in your SuiteCRM
+- After upgrading n8n itself, community nodes may need to be reinstalled
+- Check `docker logs <container>` for detailed error messages
+
+---
+
+## Contributing
+
+Contributions welcome!  
+Feel free to open issues or PRs.
+
+---
+
+## License
+
+MIT
+
+---
+
+**Maintainer:** Javier Quilez Cabello / [tecnologiasolidaria.org](https://tecnologiasolidaria.org)  
+**Support:** [SuiteCRM Forums](https://community.suitecrm.com/)  
+**Source:** [GitHub](https://github.com/tecnologiasolidaria/n8n-nodes-suitecrm)  
+**Docs:** [SuiteCRM JSON API](https://docs.suitecrm.com/developer/api/developer-setup-guide/json-api/)

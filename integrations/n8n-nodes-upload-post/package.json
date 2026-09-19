@@ -1,0 +1,60 @@
+{
+  "name": "n8n-nodes-upload-post",
+  "version": "0.5.0",
+  "description": "n8n community node for Upload Post",
+  "keywords": [
+    "n8n-community-node-package",
+    "upload-post",
+    "social media"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/Upload-Post/n8n-nodes-upload-post",
+  "author": {
+    "name": "Upload-Post",
+    "email": "info@upload-post.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Upload-Post/n8n-nodes-upload-post"
+  },
+  "engines": {
+    "node": ">=20.15"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "npx rimraf dist && tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "debug": "./debug.sh",
+    "format": "prettier nodes credentials --write",
+    "test": "npm run build && node --test test/*.test.js",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes credentials package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/UploadPostApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/UploadPost/UploadPost.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "globals": "^15.14.0",
+    "@typescript-eslint/parser": "~8.32.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.3",
+    "gulp": "^5.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "nodemon": "^3.1.10"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

@@ -1,0 +1,24 @@
+# 📊 Get first and last names from Facebook Graph API
+
+> ⚡ **4,582 views** · 📊 [Market Research & Insights](../)
+
+> 💡 **Pro Tip** — If you've run into Facebook's Graph API permission restrictions, [ScraperNode](https://scrapernode.com/facebook) is a community node that scrapes [pages](https://scrapernode.com/facebook/scrapers/profiles), [groups](https://scrapernode.com/facebook/scrapers/groups), [posts](https://scrapernode.com/facebook/scrapers/posts), and [comments](https://scrapernode.com/facebook/scrapers/comments) directly — no app review needed.
+>
+> <a href="https://scrapernode.com/facebook"><img src="https://img.shields.io/badge/View_All_Scrapers_%E2%86%92-ff6d5a?style=for-the-badge" alt="View All Scrapers" /></a>
+
+## Description
+
+Companion workflow for Facebook node docs
+
+![workflow-screenshot](fileId:114)
+
+## 🔗 Nodes Used
+
+Start, Facebook Graph API
+
+## 📥 Import
+
+Download [`workflow.json`](workflow.json) and import into n8n:
+**Workflow menu → Import from File**
+
+[📖 Importing guide](../../../docs/importing-templates.md) · [🔑 Credential setup](../../../docs/credential-setup.md)

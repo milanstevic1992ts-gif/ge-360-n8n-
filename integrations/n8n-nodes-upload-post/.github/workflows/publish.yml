@@ -1,0 +1,78 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths: ['package.json']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no publish)'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # mints the OIDC token npm trades for publish rights
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1, which Node 24 already bundles.
+      # Do NOT `npm install -g npm@latest` here: upgrading npm in place leaves
+      # its own tree short of `sigstore`, and `--provenance` then dies on it.
+      - name: Check npm supports trusted publishing
+        run: |
+          NPM_VERSION=$(npm --version)
+          echo "npm $NPM_VERSION"
+          MIN=11.5.1
+          if [ "$(printf '%s\n%s\n' "$MIN" "$NPM_VERSION" | sort -V | head -1)" != "$MIN" ]; then
+            echo "::error::npm $NPM_VERSION is older than $MIN, which trusted publishing requires"
+            exit 1
+          fi
+
+      - name: Check if version is new
+        id: version_check
+        run: |
+          LOCAL=$(node -p "require('./package.json').version")
+          PKG_NAME=$(node -p "require('./package.json').name")
+          REMOTE=$(npm view "$PKG_NAME" version 2>/dev/null || echo "0.0.0")
+          echo "local=$LOCAL" >> $GITHUB_OUTPUT
+          echo "remote=$REMOTE" >> $GITHUB_OUTPUT
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "new=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Version $LOCAL already published, skipping."
+          else
+            echo "new=true" >> $GITHUB_OUTPUT
+            echo "🚀 New version detected: $REMOTE → $LOCAL"
+          fi
+
+      - name: Install dependencies
+        if: steps.version_check.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm ci
+
+      - name: Build (if needed)
+        if: steps.version_check.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm run build --if-present
+
+      # No NODE_AUTH_TOKEN: npm authenticates via the OIDC token, and the
+      # trusted publisher is configured on npmjs.com against this repo+workflow.
+      - name: Publish to npm (dry-run)
+        if: ${{ inputs.dry_run == true }}
+        run: npm publish --provenance --access public --dry-run
+
+      - name: Publish to npm
+        if: (steps.version_check.outputs.new == 'true' && inputs.dry_run != true) || github.event_name == 'release'
+        run: npm publish --provenance --access public
