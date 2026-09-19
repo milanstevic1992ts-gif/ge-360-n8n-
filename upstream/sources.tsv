@@ -1,0 +1,25 @@
+mode	repository	destination	license	purpose
+mirror	n8n-io/self-hosted-ai-starter-kit	upstream/self-hosted-ai-starter-kit	Apache-2.0	Base self-hosted n8n + Ollama + PostgreSQL + Qdrant
+mirror	Tecnologia-Solidaria/n8n-nodes-suitecrm	integrations/n8n-nodes-suitecrm	MIT	Nodo n8n per SuiteCRM JSON API
+mirror	Upload-Post/n8n-nodes-upload-post	integrations/n8n-nodes-upload-post	MIT	Pubblicazione social multi-piattaforma da n8n
+mirror	kossakovsky/selfhost-ai	upstream/selfhost-ai	Apache-2.0	Stack AI self-hosted con n8n Ollama Flowise RAG e altri servizi
+workflows	Zie619/n8n-workflows	upstream/workflow-libraries/zie619-n8n-workflows	MIT	Grande libreria di workflow n8n
+workflows	ScraperNode/awesome-n8n-templates	upstream/workflow-libraries/scrapernode-awesome-n8n-templates	MIT	Raccolta molto ampia di template n8n
+workflows	felipfr/awesome-n8n-workflows	upstream/workflow-libraries/felipfr-awesome-n8n-workflows	MIT	Workflow curati per CRM marketing analytics e produttivita
+workflows	ritik-prog/n8n-automation-templates-5000	upstream/workflow-libraries/n8n-automation-templates-5000	MIT	Workflow reali per AI CRM marketing e RAG
+workflows	YuriCrystal/n8n-marketing-flows	upstream/workflow-libraries/n8n-marketing-flows	MIT	Template marketing social SEO news ads e Ollama
+reference	n8n-io/n8n	references/n8n-core	NOASSERTION	Core n8n ufficiale mantenuto separato per dimensione e licenza
+reference	gyoridavid/ai_agents_az	references/ai-agents-az	UNLICENSED	Idee e pattern per agenti AI n8n
+reference	josepino/n8n-competitor-analysis	references/n8n-competitor-analysis	UNLICENSED	Pattern analisi competitor
+reference	aidaptivestrategies-oss/n8n-google-maps-business-scraper	references/google-maps-business-scraper	UNLICENSED	Pattern raccolta lead business da Google Maps
+reference	sumitghugare/n8n-ai-automation-suite	references/n8n-ai-automation-suite	UNLICENSED	Pattern automazioni AI business
+reference	mautic/mautic	references/mautic	REFERENCE	Marketing automation usato dal progetto GE360 Mail Marketing
+reference	SuiteCRM/SuiteCRM	references/suitecrm	REFERENCE	CRM centrale integrato con n8n
+reference	milanstevic1992ts-gif/ge360-Prospex-engine	references/ge360/prospex-engine	INTERNAL	Motore Prospex GE360
+reference	milanstevic1992ts-gif/ge360-suite-crm	references/ge360/suitecrm	INTERNAL	SuiteCRM GE360
+reference	milanstevic1992ts-gif/ge360-Mautic	references/ge360/mautic	INTERNAL	Mautic GE360
+reference	milanstevic1992ts-gif/GE360-Jarvis	references/ge360/jarvis	INTERNAL	Jarvis GE360
+reference	milanstevic1992ts-gif/ge360-analitica-	references/ge360/analitica	INTERNAL	Analitica GE360
+reference	milanstevic1992ts-gif/Ge-360-Mail-Marketing	references/ge360/mail-marketing	INTERNAL	Orchestrazione mail marketing GE360
+reference	milanstevic1992ts-gif/ge360-social	references/ge360/social	INTERNAL	Social GE360
+reference	milanstevic1992ts-gif/Ge360-Marketing	references/ge360/marketing	INTERNAL	Marketing GE360
