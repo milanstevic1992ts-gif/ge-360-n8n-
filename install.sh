@@ -37,7 +37,7 @@ if id "$TARGET_USER" >/dev/null 2>&1 && [[ "$TARGET_USER" != "root" ]]; then
   $SUDO usermod -aG docker "$TARGET_USER" || true
 fi
 
-mkdir -p "$ROOT/.state" "$ROOT/backups" "$ROOT/packs-extra"
+mkdir -p "$ROOT/.state" "$ROOT/backups" "$ROOT/packs-extra" "$ROOT/.secrets"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   log "Genero configurazione e segreti locali..."
@@ -65,7 +65,8 @@ if [[ ! -f "$ROOT/.state/enabled-packs.txt" ]]; then
 fi
 
 $SUDO ln -sf "$ROOT/bin/ge360ctl" /usr/local/bin/ge360ctl
-chmod +x "$ROOT/bin/ge360ctl" "$ROOT/install.sh"
+$SUDO ln -sf "$ROOT/bin/n8n-agentctl" /usr/local/bin/n8n-agentctl
+chmod +x "$ROOT/bin/ge360ctl" "$ROOT/bin/n8n-agentctl" "$ROOT/install.sh"
 
 log "Avvio PostgreSQL + n8n..."
 "$ROOT/bin/ge360ctl" start
@@ -90,7 +91,7 @@ done
 if [[ "$TARGET_USER" != "root" ]]; then
   TARGET_GROUP="$(id -gn "$TARGET_USER")"
   chown "$TARGET_USER:$TARGET_GROUP" "$ENV_FILE" || true
-  chown -R "$TARGET_USER:$TARGET_GROUP" "$ROOT/.state" "$ROOT/backups" "$ROOT/packs-extra" || true
+  chown -R "$TARGET_USER:$TARGET_GROUP" "$ROOT/.state" "$ROOT/backups" "$ROOT/packs-extra" "$ROOT/.secrets" || true
 fi
 
 PORT="$(awk -F= '$1=="N8N_PORT"{print $2}' "$ENV_FILE" | tail -1)"
@@ -104,6 +105,7 @@ echo "  ge360ctl status"
 echo "  ge360ctl pack list"
 echo "  ge360ctl flow search suitecrm"
 echo "  ge360ctl pack enable crm"
+echo "  ge360ctl jarvis configure   # collega Jarvis Code alla Public API n8n"
 echo
 if [[ "$BIND" == "127.0.0.1" ]]; then
   echo "Per sicurezza n8n ascolta solo in locale. Puoi pubblicarlo tramite Tailscale/reverse proxy."
