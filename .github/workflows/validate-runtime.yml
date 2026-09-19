@@ -1,0 +1,47 @@
+name: Validate GE360 runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "install.sh"
+      - "bin/**"
+      - "deploy/**"
+      - "packs/**"
+      - ".env.example"
+      - ".github/workflows/validate-runtime.yml"
+  pull_request:
+    paths:
+      - "install.sh"
+      - "bin/**"
+      - "deploy/**"
+      - "packs/**"
+      - ".env.example"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate shell
+        run: |
+          bash -n install.sh
+          bash -n bin/ge360ctl
+
+      - name: Validate pack manifests
+        run: |
+          find packs -name pack.json -print0 | while IFS= read -r -d '' f; do
+            jq -e '.id and .name and .version and (.community_packages|type=="array")' "$f" >/dev/null
+          done
+
+      - name: Validate workflow JSON
+        run: |
+          find packs -path '*/workflows/*.json' -print0 | while IFS= read -r -d '' f; do
+            jq -e '.name and (.nodes|type=="array") and (.connections|type=="object")' "$f" >/dev/null
+          done
+
+      - name: Validate Compose
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f deploy/compose.yml config >/dev/null
