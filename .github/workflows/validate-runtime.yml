@@ -28,12 +28,17 @@ jobs:
         run: |
           bash -n install.sh
           bash -n bin/ge360ctl
+          bash -n bin/n8n-agentctl
 
       - name: Validate pack manifests
         run: |
           find packs -name pack.json -print0 | while IFS= read -r -d '' f; do
             jq -e '.id and .name and .version and (.community_packages|type=="array")' "$f" >/dev/null
           done
+
+      - name: Validate Jarvis control contract
+        run: |
+          jq -e '.transport and .authentication and .cli.capabilities' jarvis/control-contract.json >/dev/null
 
       - name: Validate workflow JSON
         run: |
