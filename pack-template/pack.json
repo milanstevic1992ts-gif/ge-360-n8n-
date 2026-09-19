@@ -1,0 +1,10 @@
+{
+  "id": "my-pack",
+  "name": "My GE360 Pack",
+  "version": "1.0.0",
+  "description": "Descrizione del modulo.",
+  "community_packages": [
+    {"name": "n8n-nodes-example", "version": "1.2.3"}
+  ],
+  "requires": []
+}
