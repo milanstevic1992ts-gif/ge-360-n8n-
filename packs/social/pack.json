@@ -1,0 +1,10 @@
+{
+  "id": "social",
+  "name": "GE360 Social",
+  "version": "1.0.0",
+  "description": "Pubblicazione e automazioni social.",
+  "community_packages": [
+    {"name": "n8n-nodes-upload-post", "version": "0.5.0"}
+  ],
+  "requires": []
+}
