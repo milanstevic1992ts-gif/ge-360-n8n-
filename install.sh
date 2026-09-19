@@ -30,8 +30,23 @@ fi
 
 log "Installazione dipendenze Debian..."
 $SUDO apt-get update
-$SUDO apt-get install -y ca-certificates curl git jq openssl python3 docker.io docker-compose
+$SUDO apt-get install -y ca-certificates curl git jq openssl python3
+
+# Non mischiare i pacchetti Docker Debian con Docker CE/plugin ufficiali.
+# Debian 13 può avere docker-compose/docker-buildx che collidono con
+# docker-compose-plugin/docker-buildx-plugin già installati.
+if command -v docker >/dev/null 2>&1; then
+  log "Docker già presente: non reinstallo docker.io/docker-compose."
+else
+  log "Docker non trovato: installo lo stack Debian senza pacchetti raccomandati in conflitto."
+  $SUDO apt-get install -y --no-install-recommends docker.io
+fi
+
 $SUDO systemctl enable --now docker
+
+if ! docker compose version >/dev/null 2>&1 && ! $SUDO docker compose version >/dev/null 2>&1; then
+  die "Docker Compose v2 non disponibile. Installa/riattiva docker-compose-plugin e rilancia install.sh."
+fi
 
 if id "$TARGET_USER" >/dev/null 2>&1 && [[ "$TARGET_USER" != "root" ]]; then
   $SUDO usermod -aG docker "$TARGET_USER" || true
