@@ -5,6 +5,7 @@
 
 # Stato runtime
 .state/
+.secrets/
 *.log
 
 # Backup locali
