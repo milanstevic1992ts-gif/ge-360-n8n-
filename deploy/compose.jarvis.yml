@@ -1,0 +1,35 @@
+services:
+  n8n-mcp:
+    image: ghcr.io/czlonkowski/n8n-mcp:2.87.0
+    restart: unless-stopped
+    env_file:
+      - ../.secrets/jarvis-n8n.env
+    environment:
+      N8N_MODE: "true"
+      MCP_MODE: "http"
+      N8N_API_URL: "http://n8n:5678"
+      WEBHOOK_SECURITY_MODE: "permissive"
+      LOG_LEVEL: "info"
+      DISABLE_CONSOLE_OUTPUT: "true"
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:${JARVIS_MCP_PORT:-3001}:3000"
+    depends_on:
+      n8n:
+        condition: service_healthy
+    networks:
+      - ge360
+
+  jarvis-toolbox:
+    build:
+      context: ./jarvis-toolbox
+    profiles: ["tools"]
+    working_dir: /workspace
+    env_file:
+      - ../.secrets/jarvis-n8n.env
+    environment:
+      N8N_API_URL: "http://n8n:5678"
+    volumes:
+      - ..:/workspace
+    networks:
+      - ge360
