@@ -1,0 +1,36 @@
+{
+  "name": "GE360 n8n Control Surface for Jarvis Code",
+  "version": "1.0.0",
+  "transport": "local-http",
+  "defaultBaseUrl": "http://127.0.0.1:5678/api/v1",
+  "authentication": {
+    "type": "header",
+    "header": "X-N8N-API-KEY",
+    "storage": ".secrets/jarvis-n8n.env"
+  },
+  "cli": {
+    "command": "n8n-agentctl",
+    "capabilities": [
+      "workflow.list",
+      "workflow.get",
+      "workflow.create",
+      "workflow.update",
+      "workflow.activate",
+      "workflow.deactivate",
+      "workflow.delete",
+      "execution.list",
+      "execution.get",
+      "execution.retry",
+      "execution.stop",
+      "execution.delete",
+      "security.audit",
+      "api.rawRequest"
+    ]
+  },
+  "safety": {
+    "directDatabaseAccess": false,
+    "automaticSnapshotBeforeWorkflowUpdate": true,
+    "automaticSnapshotBeforeWorkflowDelete": true,
+    "bindAddress": "127.0.0.1"
+  }
+}
