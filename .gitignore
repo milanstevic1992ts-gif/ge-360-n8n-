@@ -1,0 +1,20 @@
+# Segreti e configurazione locale
+.env
+.env.*
+!.env.example
+
+# Stato runtime
+.state/
+*.log
+
+# Backup locali
+backups/*
+!backups/.gitkeep
+
+# Pack installati localmente
+packs-extra/*
+!packs-extra/.gitkeep
+
+# File temporanei
+.tmp/
+tmp/
