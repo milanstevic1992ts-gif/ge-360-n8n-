@@ -23,3 +23,8 @@ reference	milanstevic1992ts-gif/ge360-analitica-	references/ge360/analitica	INTE
 reference	milanstevic1992ts-gif/Ge-360-Mail-Marketing	references/ge360/mail-marketing	INTERNAL	Orchestrazione mail marketing GE360
 reference	milanstevic1992ts-gif/ge360-social	references/ge360/social	INTERNAL	Social GE360
 reference	milanstevic1992ts-gif/Ge360-Marketing	references/ge360/marketing	INTERNAL	Marketing GE360
+reference	czlonkowski/n8n-mcp	references/n8n-mcp	MIT	MCP agentico: patch parziali validazione autofix test versioni e controllo n8n
+reference	EtienneLescot/n8n-as-code	references/n8n-as-code	MIT	Workflow-as-code Git sync conoscenza nodi e CLI n8nac
+reference	n8n-gitops/n8n-gitops	references/n8n-gitops	MIT	Pattern GitOps export validate deploy rollback
+reference	yigitkonur/n8n-workflow-validator	references/n8n-workflow-validator	MIT	Validazione workflow con motore nativo n8n
+reference	Vojtaupan/n8n-doctor	references/n8n-doctor	MIT	Lint semantico production-readiness
