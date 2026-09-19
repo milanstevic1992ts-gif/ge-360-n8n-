@@ -29,6 +29,7 @@ jobs:
           bash -n install.sh
           bash -n bin/ge360ctl
           bash -n bin/n8n-agentctl
+          bash -n bin/workflow-guard
 
       - name: Validate pack manifests
         run: |
@@ -38,7 +39,8 @@ jobs:
 
       - name: Validate Jarvis control contract
         run: |
-          jq -e '.transport and .authentication and .cli.capabilities' jarvis/control-contract.json >/dev/null
+          jq -e '.primaryTransport and .fallbackTransport and .cli.capabilities and .validators' jarvis/control-contract.json >/dev/null
+          jq -e '.rules and .toolPriority' jarvis/policy.json >/dev/null
 
       - name: Validate workflow JSON
         run: |
@@ -49,4 +51,17 @@ jobs:
       - name: Validate Compose
         run: |
           cp .env.example .env
+          mkdir -p .secrets
+          cat > .secrets/jarvis-n8n.env <<'EOF'
+          N8N_AGENT_URL=http://127.0.0.1:5678/api/v1
+          N8N_AGENT_API_KEY=test
+          N8N_API_KEY=test
+          AUTH_TOKEN=0123456789012345678901234567890123456789012345678901234567890123
+          MCP_AUTH_TOKEN=0123456789012345678901234567890123456789012345678901234567890123
+          EOF
           docker compose --env-file .env -f deploy/compose.yml config >/dev/null
+          docker compose --env-file .env -f deploy/compose.yml -f deploy/compose.jarvis.yml config >/dev/null
+
+      - name: Build Jarvis toolbox
+        run: |
+          docker build -t ge360-jarvis-toolbox-test deploy/jarvis-toolbox
