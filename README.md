@@ -115,7 +115,7 @@ ge360ctl jarvis guard managed-workflows/mio-workflow.json
 Il guard esegue:
 
 ```text
-n8n-workflow-validator
+n8nac validate --strict
         ↓
 n8n-doctor
         ↓
